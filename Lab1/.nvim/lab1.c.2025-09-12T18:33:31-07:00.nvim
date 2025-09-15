@@ -1,0 +1,21 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]) {
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t nread;
+  char *token, *saveptr;
+
+  printf("Please enter some text:");
+
+  nread = getline(&line, &len, stdin);
+
+  token = strtok_r(line, " ", &saveptr);
+  if (nread != -1) {
+    printf("Tokens: %s\n", token);
+  }
+
+  free(line);
+  return 0;
+}

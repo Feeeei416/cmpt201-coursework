@@ -1,0 +1,20 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]) {
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t nread;
+  printf("Please enter some text:\n");
+  while ((nread = getline(&line, &len, stdin)) != -1}{
+    printf("Please enter some text: %s\n", line);
+    fwrite(line, nread, 1, stdout);
+  }
+
+  free(line);
+  printf("Number of arguments: %d\n", argc);
+  for (int i = 0; i < argc; i++) {
+    printf("argv[%d] = %s\n", i, argv[i]);
+  }
+  return 0;
+}

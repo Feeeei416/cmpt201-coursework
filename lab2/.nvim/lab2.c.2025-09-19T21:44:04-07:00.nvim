@@ -1,0 +1,43 @@
+#define _POSIX_C_SOURCE 200809L
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+int main() {
+  char *line = NULL;
+  size_t len = 0;
+
+  while (true) {
+    printf("Enter programs to run.\n");
+    printf("> ");
+
+    //read the user input
+    ssize_t nread = getline(&line, &len, stdin);
+    if (nread == -1) {
+      perror("getline failed");
+      exit(EXIT_FAILURE);
+    } else if (len > 0) {
+      line[len - 1] = '\0';
+    }
+
+    pid_t pid = fork();
+
+    if (pid != 0) { // Parent
+      int status = 0;
+      pid_t wpid = waitpid(pid, &status, 0);
+
+      if (wpid == -1) {
+        perror("waitpid failed!\n");
+        exit(EXIT_FAILURE);
+      }
+    } else { // child
+      if (execl(line, line, NULL) == -1) {
+        printf("Exec failure\n");
+      }
+    }
+  }
+  return 0;
+}

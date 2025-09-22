@@ -22,7 +22,7 @@ int main() {
       line[nread - 1] = '\0';
     }
 
-    // Get the pid
+    //Get the pid
     pid_t pid = fork();
 
     if (pid != 0) { // Parent

@@ -1,0 +1,68 @@
+#define _POSIX_C_SOURCE 200809L
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_LEN 5
+
+char *input_history[MAX_LEN];
+int history_len = 0;
+
+char *get_input();
+void add_history(char *input);
+void print_history();
+void remove_oldest_history();
+
+int main() {
+  while (true) {
+    char *input = get_input();
+    size_t len = strlen(input);
+    if (len > 0 && input[len - 1] == '\n') {
+      input[len - 1] = '\0';
+    }
+
+    add_history(input);
+    if (strcmp(input, "print") == 0) {
+      print_history();
+    }
+  }
+}
+
+char *get_input() {
+  char *line = NULL;
+  size_t len = 0;
+
+  printf("Enter input: ");
+  ssize_t nread = getline(&line, &len, stdin);
+
+  if (nread == -1) {
+    perror("getline failed");
+    exit(EXIT_FAILURE);
+  }
+  return line;
+}
+
+void add_history(char *input) {
+  if (history_len >= MAX_LEN) {
+    remove_oldest_history();
+  }
+  input_history[history_len] = input;
+  history_len++;
+}
+
+void print_history() {
+  for (int i = 0; i < history_len; i++) {
+    printf("%s\n", input_history[i]);
+  }
+}
+
+void remove_oldest_history() {
+  if (history_len > 0) {
+    free(input_history[0]);
+    for (int i = 1; i < history_len; i++) {
+      input_history[i - 1] = input_history[i];
+    }
+    history_len--;
+  }
+}

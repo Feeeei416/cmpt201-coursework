@@ -29,7 +29,8 @@ void *increase_heap_size(int EXTRA_SIZE) {
 void initialize_block(struct header *block, struct header *next, int value) {
   block->size = BLOCK_SIZE;
   block->next = next;
-  memset(block + 1, value, BLOCK_SIZE - sizeof(struct header));
+  memset(block + 1, value,
+         BLOCK_SIZE - sizeof(struct header));
 }
 
 void print_out(char *format, void *data, size_t data_size) {

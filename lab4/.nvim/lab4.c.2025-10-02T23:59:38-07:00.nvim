@@ -1,0 +1,73 @@
+#define _POSIX_C_SOURCE 200809L
+#define _ISOC99_SOURCE
+#define _DEFAULT_SOURCE
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#define BLOCK_SIZE 128
+#define HEAP_SIZE 256
+#define BUF_SIZE 64
+
+struct header {
+  uint64_t size;
+  struct header *next;
+};
+
+int *increase_heap_size(int EXTRA_SIZE);
+
+void initialize_block(struct header *block, struct header *next, int value);
+
+void print_out(struct header *f_block, struct header *s_block);
+
+void print_block(struct header *block);
+
+int main() {
+  int *start_address = increase_heap_size(HEAP_SIZE);
+
+  struct header *first_block = (struct header *)start_address;
+  struct header *second_block = (struct header *)(start_address + BLOCK_SIZE);
+
+  initialize_block(first_block, NULL, 0);
+  initialize_block(second_block, first_block, 1);
+
+  print_out(first_block, second_block);
+  return 0;
+}
+
+int *increase_heap_size(int EXTRA_SIZE) {
+  void *start_address = sbrk(HEAP_SIZE);
+  if (start_address == (void *)-1) {
+    perror("sbrk() failed");
+    exit(EXIT_FAILURE);
+  }
+  return start_address;
+}
+
+void initialize_block(struct header *block, struct header *next, int value) {
+  block->size = BLOCK_SIZE;
+  block->next = next;
+  memset(block + 1, value, BLOCK_SIZE - sizeof(struct header));
+}
+
+void print_out(struct header *f_block, struct header *s_block) {
+  printf("first block:       %p\n", f_block);
+  printf("second block:      %p\n", s_block);
+  printf("first block size:  %lu\n", f_block->size);
+  printf("first block next:  %p\n", f_block->next);
+  printf("second block size: %lu\n", s_block->size);
+  printf("second block next: %p\n", s_block->next);
+  //print_block(f_block);
+  //print_block(s_block);
+}
+
+void print_block(struct header *block) {
+  for (int i = 0; i < BLOCK_SIZE - sizeof(struct header); ++i) {
+    char *addr = (block + sizeof(struct header) + i);
+    uint64_t val = (uint64_t)*addr;
+    printf("%lu\n", val);
+  }
+}

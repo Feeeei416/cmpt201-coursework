@@ -115,7 +115,7 @@ void *alloc(int size) {
   if (size <= 0)
     return NULL;
 
-  const int need_space = HEADER_SIZE + size;
+  int need_space = HEADER_SIZE + size;
   if (free_space < need_space) {
     if (total_space + INCREMENT > space_limit)
       return NULL;
@@ -126,7 +126,8 @@ void *alloc(int size) {
     if (output == -1)
       return NULL;
 
-    insert_free_sorted(h);
+    h->next = free_head;
+    free_head = h;
     coalesce();
   }
 
@@ -137,21 +138,24 @@ void *alloc(int size) {
   if (output == -1)
     return NULL;
 
-  if (prev)
-    prev->next = res->next;
-  else
-    free_head = res->next;
-  res->next = NULL;
-
   uint64_t rem = res->size - need_space;
   if (rem < HEADER_SIZE) {
+    if (prev)
+      prev->next = res->next;
+    else
+      free_head = res->next;
+    need_space += rem;
+    res->size = need_space;
     free_space -= res->size;
   } else {
     struct header *remh = (struct header *)((char *)res + need_space);
     remh->size = rem;
-    remh->next = NULL;
-    insert_free_sorted(remh);
-    coalesce();
+    remh->next = res->next;
+    if (prev)
+      prev->next = remh;
+    else
+      free_head = remh;
+
     res->size = need_space;
     free_space -= (int)need_space;
   }
@@ -173,14 +177,32 @@ void insert_free_sorted(struct header *h) {
 
 void coalesce(void) {
   struct header *cur = free_head;
-  while (cur && cur->next) {
+  struct header *prev = NULL;
+  struct header *end = free_head + free_head->size;
+  struct header *free_front = NULL;
+  struct header *free_back = NULL;
+  struct header *back_prev = NULL;
+  while (cur != NULL) {
     char *end_cur = (char *)cur + cur->size;
-    if (end_cur == (char *)cur->next) {
-      cur->size += cur->next->size;
-      cur->next = cur->next->next;
-    } else {
-      cur = cur->next;
+    if (end_cur == (char *)free_head) {
+      free_front = cur;
+    } else if ((char *)cur == (char *)end) {
+      free_back = cur;
+      back_prev = prev;
     }
+    prev = cur;
+    cur = cur->next;
+  }
+  if (free_back != NULL) {
+    struct header *h = free_head;
+    back_prev->next = free_back->next;
+    h->size += free_back->size;
+    free_back->next = NULL;
+  }
+  if (free_front != NULL) {
+    struct header *h = free_head;
+    free_front->size += h->size;
+    free_head = h->next;
   }
 }
 
@@ -195,8 +217,8 @@ void dealloc(void *node) {
     return;
 
   free_space += h->size;
-  h->next = NULL;
-  insert_free_sorted(h);
+  h->next = free_head;
+  free_head = h;
   coalesce();
 }
 

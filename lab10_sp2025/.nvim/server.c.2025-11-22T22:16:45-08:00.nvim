@@ -220,6 +220,7 @@ static void *run_acceptor(void *args) {
                            &client_args[num_clients]))
           handle_error("pthread_create");
         num_clients++;
+
       }
     }
   }
@@ -232,8 +233,8 @@ static void *run_acceptor(void *args) {
     // TODO: Wait for the client thread and close its socket
     client_args[i].run = false;
     pthread_join(threads[i], NULL);
-    if (close(client_args[i].cfd) == -1)
-      perror("closing server socket");
+    // if (close(client_args[i].cfd) == -1)
+    // perror("closing server socket");
   }
 
   if (close(sfd) == -1) {

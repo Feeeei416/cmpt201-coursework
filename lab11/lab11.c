@@ -10,10 +10,10 @@
 #define GRN "\e[0;32m"
 #define CRESET "\e[0m"
 
-#define handle_error(msg)            \
-  do {                               \
-    perror(msg);                     \
-    exit(EXIT_FAILURE);              \
+#define handle_error(msg)                                                      \
+  do {                                                                         \
+    perror(msg);                                                               \
+    exit(EXIT_FAILURE);                                                        \
   } while (0)
 
 size_t read_all_bytes(const char *filename, void *buffer, size_t buffer_size) {
@@ -63,7 +63,11 @@ int main() {
                                    "signature3.sig"};
 
   // TODO: Load the public key using PEM_read_PUBKEY
-  EVP_PKEY *pubkey = NULL;
+  FILE *pub_key_file = fopen("public_key.pem", "r");
+  if (!pub_key_file) {
+    handle_error("Error opening public key file");
+  }
+  EVP_PKEY *pubkey = PEM_read_PUBKEY(pub_key_file, NULL, NULL, NULL);
 
   // Verify each message
   for (int i = 0; i < 3; i++) {
@@ -102,6 +106,25 @@ int verify(const char *message_path, const char *sign_path, EVP_PKEY *pubkey) {
 
   // TODO: Check if the message is authentic using the signature.
   // Look at: https://wiki.openssl.org/index.php/EVP_Signing_and_Verifying
+  size_t message_size = read_all_bytes(message_path, message, MAX_FILE_SIZE);
+  size_t signature_size = read_all_bytes(sign_path, signature, MAX_FILE_SIZE);
 
-  return -1;
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (!mdctx) {
+    handle_error("Error creating EVP_MD_CTX");
+  }
+
+  if (EVP_DigestVerifyInit(mdctx, NULL, EVP_sha256(), NULL, pubkey) != 1) {
+    handle_error("Error initializing EVP_DigestVerify");
+  }
+
+  if (EVP_DigestVerifyUpdate(mdctx, message, message_size) != 1) {
+    handle_error("Error initializing EVP_DigestVerify");
+  }
+
+  int result = EVP_DigestVerifyFinal(mdctx, signature, signature_size);
+
+  EVP_MD_CTX_free(mdctx);
+
+  return result;
 }
